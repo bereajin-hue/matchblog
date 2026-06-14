@@ -24,47 +24,20 @@ export async function middleware(request: NextRequest) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
+
   const pathname = request.nextUrl.pathname
+  const protectedPaths = ['/analyze', '/apply', '/checkout', '/mypage', '/admin']
+  const isProtected = protectedPaths.some(p => pathname.startsWith(p))
 
-  // (user) 라우트: 로그인 필수
-  const isUserRoute = pathname.startsWith('/analyze') ||
-    pathname.startsWith('/apply') ||
-    pathname.startsWith('/checkout') ||
-    pathname.startsWith('/mypage')
-
-  // admin 라우트: role='admin' 필수
-  const isAdminRoute = pathname.startsWith('/admin')
-
-  if (isUserRoute && !user) {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
-
-  if (isAdminRoute) {
-    if (!user) {
-      return NextResponse.redirect(new URL('/login', request.url))
-    }
-
-    // admin role 확인은 서버 컴포넌트에서 재검증
-    const { data: profile } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (profile?.role !== 'admin') {
-      return NextResponse.redirect(new URL('/', request.url))
-    }
+  if (isProtected && !user) {
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('next', pathname)
+    return NextResponse.redirect(loginUrl)
   }
 
   return supabaseResponse
 }
 
 export const config = {
-  matcher: [
-    '/analyze/:path*',
-    '/apply/:path*',
-    '/checkout/:path*',
-    '/mypage/:path*',
-    '/admin/:path*',
-  ],
+  matcher: ['/analyze/:path*', '/apply/:path*', '/checkout/:path*', '/mypage/:path*', '/admin/:path*'],
 }
