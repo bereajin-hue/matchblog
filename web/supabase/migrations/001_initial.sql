@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS public.orders (
   user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
   product_type TEXT NOT NULL CHECK (product_type IN ('basic', 'pro')),
   amount INTEGER NOT NULL CHECK (amount > 0),
-  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'in_progress', 'completed', 'refunded', 'cancelled')),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'in_progress', 'done', 'refunded', 'cancelled')),
   place_url TEXT NOT NULL,
   applicant_name TEXT NOT NULL,
   business_no TEXT NOT NULL,
@@ -115,7 +115,7 @@ CREATE POLICY "order_assets_admin" ON public.order_assets
 CREATE TABLE IF NOT EXISTS public.posts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   order_id UUID NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
-  channel TEXT NOT NULL CHECK (channel IN ('naver_blog', 'tistory', 'blogger', 'naver_clip')),
+  channel TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'published', 'failed')),
   published_url TEXT,
   ad_disclosure_included BOOLEAN NOT NULL DEFAULT FALSE,
