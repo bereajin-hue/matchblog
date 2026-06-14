@@ -1,8 +1,17 @@
-export default function AnalyzePage() {
-  return (
-    <main className="min-h-screen py-20 px-4 max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold mb-4">네이버 플레이스 무료 분석</h1>
-      <p className="text-gray-500">무료 분석 페이지 — STEP 3에서 구현 예정</p>
-    </main>
-  )
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import AnalyzeClient from './AnalyzeClient'
+
+export default async function AnalyzePage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login?next=/analyze')
+
+  const { data: existing } = await supabase
+    .from('free_analyses')
+    .select('id, result_json, used_at')
+    .eq('user_id', user.id)
+    .single()
+
+  return <AnalyzeClient alreadyUsed={!!existing} previousResult={existing?.result_json ?? null} />
 }
