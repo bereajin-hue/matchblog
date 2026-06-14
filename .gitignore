@@ -17,3 +17,6 @@ web/.next/
 
 # OS
 .DS_Store
+
+# Claude Code 로컬 설정
+.claude/
