@@ -75,7 +75,7 @@ export default function AnalysisResult({ result }: { result: AnalysisResultData 
                 strokeWidth={2}
               />
               <Tooltip
-                formatter={(value: number) => [`${value}점`, '점수']}
+                formatter={(value) => [`${value}점`, '점수']}
                 contentStyle={{ borderRadius: '8px', border: '1px solid #E5E7EB' }}
               />
             </RadarChart>

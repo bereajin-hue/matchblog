@@ -1,0 +1,63 @@
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import Link from 'next/link'
+
+export const dynamic = 'force-dynamic'
+
+interface Props {
+  searchParams: Promise<{ paymentKey?: string; orderId?: string; amount?: string }>
+}
+
+export default async function CheckoutSuccessPage({ searchParams }: Props) {
+  const { paymentKey, orderId, amount } = await searchParams
+
+  if (!paymentKey || !orderId || !amount) redirect('/apply')
+
+  // 서버에서 결제 승인 API 호출
+  const res = await fetch(
+    `${process.env.NEXTAUTH_URL ?? 'http://localhost:3000'}/api/payments/confirm`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ paymentKey, orderId, amount: Number(amount) }),
+    }
+  )
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    redirect(`/checkout/fail?message=${encodeURIComponent(data.error ?? '결제 승인 실패')}`)
+  }
+
+  const supabase = await createClient()
+  const { data: order } = await supabase
+    .from('orders')
+    .select('product_type, amount')
+    .eq('id', orderId)
+    .single()
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+      <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
+        <div className="text-6xl mb-4">🎉</div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">결제가 완료되었습니다!</h1>
+        <p className="text-gray-500 mb-6">
+          신청이 접수되었습니다.<br />
+          관리자 검수 후 포스팅이 진행됩니다.
+        </p>
+        <div className="bg-blue-50 rounded-xl p-4 mb-6 text-sm text-left space-y-1">
+          <div className="flex justify-between">
+            <span className="text-gray-500">주문번호</span>
+            <span className="font-mono text-xs">{orderId}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500">결제 금액</span>
+            <span className="font-bold text-blue-600">{(order?.amount ?? Number(amount)).toLocaleString()}원</span>
+          </div>
+        </div>
+        <Link href="/mypage" className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors">
+          마이페이지에서 진행 상황 확인 →
+        </Link>
+      </div>
+    </div>
+  )
+}
