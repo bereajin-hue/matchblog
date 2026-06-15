@@ -105,8 +105,7 @@ export default function ApplyClient() {
           <Field label="신청자 이름" name="applicant_name" required placeholder="홍길동" />
           <Field label="사업자번호" name="business_no" required placeholder="000-00-00000"
             pattern="\d{3}-\d{2}-\d{5}" title="형식: 000-00-00000" />
-          <Field label="연락처" name="phone" type="tel" required placeholder="010-0000-0000"
-            pattern="01[0-9]-\d{3,4}-\d{4}" title="형식: 010-0000-0000" />
+          <PhoneField />
         </div>
 
         {/* 파일 업로드 */}
@@ -211,6 +210,36 @@ function Field({ label, name, type = 'text', required, placeholder, pattern, tit
       <input name={name} type={type} required={required} placeholder={placeholder}
         pattern={pattern} title={title}
         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900 bg-white placeholder:text-gray-400" />
+    </div>
+  )
+}
+
+function PhoneField() {
+  const [value, setValue] = useState('')
+
+  function format(raw: string) {
+    const digits = raw.replace(/\D/g, '').slice(0, 11)
+    if (digits.length <= 3) return digits
+    if (digits.length <= 7) return `${digits.slice(0, 3)}-${digits.slice(3)}`
+    return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`
+  }
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        연락처 <span className="text-red-500">*</span>
+      </label>
+      <input
+        name="phone"
+        type="tel"
+        required
+        value={value}
+        onChange={e => setValue(format(e.target.value))}
+        placeholder="010-0000-0000"
+        pattern="01[0-9]-\d{3,4}-\d{4}"
+        title="형식: 010-0000-0000"
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900 bg-white placeholder:text-gray-400"
+      />
     </div>
   )
 }

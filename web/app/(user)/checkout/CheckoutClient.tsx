@@ -23,6 +23,7 @@ export default function CheckoutClient({ orderId, amount, productName, customerN
   const widgetsRef = useRef<any>(null)
   const [ready, setReady] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [payError, setPayError] = useState('')
 
   useEffect(() => {
     const script = document.createElement('script')
@@ -59,6 +60,7 @@ export default function CheckoutClient({ orderId, amount, productName, customerN
   async function handlePay() {
     if (!widgetsRef.current || loading) return
     setLoading(true)
+    setPayError('')
     try {
       const origin = window.location.origin
       await widgetsRef.current.requestPayment({
@@ -69,9 +71,13 @@ export default function CheckoutClient({ orderId, amount, productName, customerN
         failUrl: `${origin}/checkout/fail`,
       })
     } catch (e: unknown) {
-      // 사용자가 결제창을 닫은 경우 등
-      if (e instanceof Error && e.message !== 'PAY_PROCESS_CANCELED') {
-        alert('결제 중 오류가 발생했습니다.')
+      if (e instanceof Error) {
+        if (e.message === 'PAY_PROCESS_CANCELED') {
+          // 사용자가 결제창을 닫은 경우 — 조용히 처리
+        } else {
+          setPayError(`결제 오류: ${e.message}`)
+          console.error('[Toss 결제 오류]', e)
+        }
       }
       setLoading(false)
     }
@@ -109,6 +115,12 @@ export default function CheckoutClient({ orderId, amount, productName, customerN
         <div id="payment-widget" ref={paymentRef} />
         <div id="agreement-widget" ref={agreementRef} />
       </div>
+
+      {payError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg mb-4">
+          {payError}
+        </div>
+      )}
 
       {!ready && (
         <div className="text-center py-8 text-gray-400">
