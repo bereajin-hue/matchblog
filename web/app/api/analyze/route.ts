@@ -1,14 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { rateLimit } from '@/lib/rate-limit'
-
-const AnalyzeSchema = z.object({
-  place_url: z.string().url().refine(
-    url => url.includes('naver.me') || url.includes('place.naver.com') || url.includes('map.naver.com'),
-    { message: '네이버 플레이스 URL만 지원합니다.' }
-  ),
-})
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get('x-forwarded-for') ?? 'unknown'
@@ -24,53 +16,124 @@ export async function POST(request: NextRequest) {
     .from('free_analyses')
     .select('id')
     .eq('user_id', user.id)
-    .single()
+    .maybeSingle()
 
   if (existing) {
     return NextResponse.json({ error: 'already_used' }, { status: 403 })
   }
 
-  const body = await request.json().catch(() => null)
-  const parsed = AnalyzeSchema.safeParse(body)
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
+  // FormData로 스크린샷 수신
+  const formData = await request.formData().catch(() => null)
+  if (!formData) {
+    return NextResponse.json({ error: '요청 형식이 잘못되었습니다.' }, { status: 400 })
   }
 
-  const { place_url } = parsed.data
+  const screenshotFile = formData.get('screenshot') as File | null
+  const placeUrl = (formData.get('place_url') as string | null) ?? ''
+
+  if (!screenshotFile) {
+    return NextResponse.json({ error: '스크린샷을 업로드해주세요.' }, { status: 400 })
+  }
 
   let result
-  const workerUrl = process.env.WORKER_URL
-  if (workerUrl) {
+  const geminiKey = process.env.GEMINI_API_KEY
+
+  if (geminiKey) {
     try {
-      const workerRes = await fetch(`${workerUrl}/analyze`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Worker-Secret': process.env.WORKER_SECRET!,
-        },
-        body: JSON.stringify({ place_url }),
-        signal: AbortSignal.timeout(30_000),
-      })
-      if (workerRes.ok) {
-        result = await workerRes.json()
-      }
-    } catch {
-      // fallback to mock
+      result = await analyzeWithGemini(screenshotFile, placeUrl, geminiKey)
+    } catch (err) {
+      console.error('Gemini 분석 오류:', err)
     }
   }
 
   if (!result) {
-    result = generateMockResult(place_url)
+    result = generateMockResult(placeUrl)
   }
 
   const adminClient = createAdminClient()
   await adminClient.from('free_analyses').insert({
     user_id: user.id,
-    place_url,
+    place_url: placeUrl || '스크린샷으로 분석',
     result_json: result,
   })
 
   return NextResponse.json({ result })
+}
+
+async function analyzeWithGemini(file: File, placeUrl: string, apiKey: string) {
+  const bytes = await file.arrayBuffer()
+  const base64 = Buffer.from(bytes).toString('base64')
+  const mimeType = file.type || 'image/jpeg'
+
+  const prompt = `이 이미지는 네이버 플레이스(지도) 업체 페이지 스크린샷입니다.
+아래 항목을 0~100점으로 각각 평가하고, JSON 형식으로만 응답하세요. 설명 없이 JSON만 출력하세요.
+
+평가 기준:
+- blog_count: 블로그 후기 수 (많을수록 높은 점수, 화면에 보이는 블로그 리뷰/후기 수 기준)
+- photo_quality: 사진 품질과 다양성 (사진 수, 선명도, 구성 등)
+- review_count: 방문자 리뷰/별점 수 (많을수록 높은 점수)
+- keyword_density: 업체명/지역명/메뉴 키워드 최적화 수준
+- response_rate: 사장님 답글/답변 활성도 (보이는 경우 높은 점수)
+- update_frequency: 정보 최신성/업데이트 빈도 (최근 리뷰/사진 기준)
+
+응답 형식 (JSON만):
+{
+  "place_name": "업체명 (화면에서 읽기, 모르면 '분석 대상 업체')",
+  "place_url": "${placeUrl || ''}",
+  "scores": {
+    "blog_count": 숫자,
+    "photo_quality": 숫자,
+    "review_count": 숫자,
+    "keyword_density": 숫자,
+    "response_rate": 숫자,
+    "update_frequency": 숫자
+  },
+  "overall_score": 평균점수,
+  "seo_comments": [
+    "개선 필요한 항목 설명 1",
+    "개선 필요한 항목 설명 2",
+    "개선 필요한 항목 설명 3",
+    "개선 필요한 항목 설명 4"
+  ]
+}`
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: prompt },
+            { inline_data: { mime_type: mimeType, data: base64 } },
+          ],
+        }],
+        generationConfig: { temperature: 0.2, maxOutputTokens: 1024 },
+      }),
+      signal: AbortSignal.timeout(30_000),
+    }
+  )
+
+  if (!res.ok) throw new Error(`Gemini API 오류: ${res.status}`)
+
+  const data = await res.json()
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+
+  // JSON 추출 (마크다운 코드블록 제거)
+  const jsonMatch = text.match(/\{[\s\S]*\}/)
+  if (!jsonMatch) throw new Error('Gemini 응답 파싱 실패')
+
+  const parsed = JSON.parse(jsonMatch[0])
+
+  // overall_score 재계산 (안전하게)
+  const scores = parsed.scores
+  const overall = Math.round(
+    Object.values(scores as Record<string, number>).reduce((a, b) => a + b, 0) /
+    Object.keys(scores).length
+  )
+
+  return { ...parsed, overall_score: overall }
 }
 
 function generateMockResult(placeUrl: string) {

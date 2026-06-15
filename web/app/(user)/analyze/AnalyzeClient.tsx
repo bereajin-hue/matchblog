@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import AnalysisResult from './AnalysisResult'
 
@@ -27,10 +27,13 @@ interface AnalyzeClientProps {
 export default function AnalyzeClient({ alreadyUsed, previousResult }: AnalyzeClientProps) {
   const router = useRouter()
   const [placeUrl, setPlaceUrl] = useState('')
+  const [screenshot, setScreenshot] = useState<File | null>(null)
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null)
   const [urlError, setUrlError] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState<Record<string, unknown> | null>(previousResult)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   if (result) {
     return <AnalysisResult result={result as unknown as AnalysisResultData} />
@@ -61,8 +64,16 @@ export default function AnalyzeClient({ alreadyUsed, previousResult }: AnalyzeCl
     )
   }
 
+  function handleScreenshot(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setScreenshot(file)
+    const url = URL.createObjectURL(file)
+    setScreenshotPreview(url)
+  }
+
   const validateUrl = (url: string) => {
-    if (!url) return '플레이스 URL을 입력해주세요.'
+    if (!url) return ''
     if (!url.includes('naver.me') && !url.includes('place.naver.com') && !url.includes('map.naver.com')) {
       return '네이버 플레이스 URL만 지원합니다. (naver.me, place.naver.com, map.naver.com)'
     }
@@ -71,9 +82,13 @@ export default function AnalyzeClient({ alreadyUsed, previousResult }: AnalyzeCl
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const validationError = validateUrl(placeUrl)
-    if (validationError) {
-      setUrlError(validationError)
+    if (!screenshot) {
+      setError('플레이스 스크린샷을 업로드해주세요.')
+      return
+    }
+    const urlValidationError = validateUrl(placeUrl)
+    if (urlValidationError) {
+      setUrlError(urlValidationError)
       return
     }
     setUrlError('')
@@ -81,10 +96,13 @@ export default function AnalyzeClient({ alreadyUsed, previousResult }: AnalyzeCl
     setError('')
 
     try {
+      const formData = new FormData()
+      formData.append('screenshot', screenshot)
+      if (placeUrl) formData.append('place_url', placeUrl)
+
       const res = await fetch('/api/analyze', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ place_url: placeUrl }),
+        body: formData,
       })
       const data = await res.json()
       if (!res.ok) {
@@ -110,29 +128,55 @@ export default function AnalyzeClient({ alreadyUsed, previousResult }: AnalyzeCl
           <div className="text-5xl mb-3">🔍</div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">네이버 플레이스 무료 분석</h1>
           <p className="text-gray-600 text-sm">
-            플레이스 URL을 입력하면 SEO 현황을 무료로 분석해드립니다.<br />
+            플레이스 화면을 캡처해서 올리면 AI가 SEO 현황을 분석해드립니다.<br />
             <span className="text-orange-500 font-medium">계정당 1회 무료 제공</span>
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
+          {/* 스크린샷 업로드 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              네이버 플레이스 URL <span className="text-red-500">*</span>
+              플레이스 스크린샷 <span className="text-red-500">*</span>
+            </label>
+            <p className="text-xs text-gray-400 mb-2">
+              네이버 지도 앱 또는 PC에서 플레이스 화면을 캡처해 올려주세요.
+            </p>
+            <input ref={fileRef} type="file" accept="image/*" onChange={handleScreenshot} className="hidden" />
+            {screenshotPreview ? (
+              <div className="relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={screenshotPreview} alt="스크린샷 미리보기" className="w-full rounded-xl border border-gray-200 max-h-64 object-contain bg-gray-50" />
+                <button type="button" onClick={() => { setScreenshot(null); setScreenshotPreview(null) }}
+                  className="absolute top-2 right-2 bg-white rounded-full p-1 shadow text-gray-500 hover:text-red-500 text-xs">
+                  ✕ 다시 선택
+                </button>
+              </div>
+            ) : (
+              <button type="button" onClick={() => fileRef.current?.click()}
+                className="w-full py-8 border-2 border-dashed border-gray-300 rounded-xl text-sm text-gray-500 hover:border-blue-400 hover:text-blue-600 transition-colors flex flex-col items-center gap-2">
+                <span className="text-3xl">📷</span>
+                <span>클릭해서 스크린샷 업로드</span>
+                <span className="text-xs text-gray-400">JPG, PNG, WEBP 지원</span>
+              </button>
+            )}
+          </div>
+
+          {/* URL 입력 (선택) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              네이버 플레이스 URL <span className="text-gray-400 font-normal">(선택)</span>
             </label>
             <input
               type="url"
               value={placeUrl}
               onChange={e => { setPlaceUrl(e.target.value); setUrlError('') }}
-              placeholder="https://place.naver.com/restaurant/12345678"
-              className={`w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+              placeholder="https://naver.me/xxxxx  또는  https://place.naver.com/..."
+              className={`w-full border rounded-xl px-4 py-3 text-sm text-gray-900 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
                 urlError ? 'border-red-400 bg-red-50' : 'border-gray-300'
               }`}
             />
             {urlError && <p className="text-red-500 text-xs mt-1.5">{urlError}</p>}
-            <p className="text-gray-400 text-xs mt-1.5">
-              지원 URL: naver.me, place.naver.com, map.naver.com
-            </p>
           </div>
 
           {error && (
@@ -143,8 +187,8 @@ export default function AnalyzeClient({ alreadyUsed, previousResult }: AnalyzeCl
 
           <button
             type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold py-3.5 px-6 rounded-xl transition-colors flex items-center justify-center gap-2"
+            disabled={loading || !screenshot}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed text-white font-semibold py-3.5 px-6 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
@@ -152,7 +196,7 @@ export default function AnalyzeClient({ alreadyUsed, previousResult }: AnalyzeCl
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                 </svg>
-                분석 중... (최대 30초)
+                AI 분석 중... (최대 30초)
               </>
             ) : (
               '분석 시작하기 →'
