@@ -31,7 +31,14 @@ export default function CheckoutClient({ orderId, amount, productName, customerN
     script.async = true
     script.onload = async () => {
       const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY
-      if (!clientKey || !window.TossPayments) return
+      if (!clientKey) {
+        setPayError('토스페이먼츠 클라이언트 키가 설정되지 않았습니다. .env.local을 확인하세요.')
+        return
+      }
+      if (!window.TossPayments) {
+        setPayError('토스페이먼츠 스크립트 로드 실패. 새로고침 후 다시 시도하세요.')
+        return
+      }
 
       const toss = window.TossPayments(clientKey)
       const widgets = toss.widgets({ customerKey: `user_${orderId}` })
@@ -71,14 +78,9 @@ export default function CheckoutClient({ orderId, amount, productName, customerN
         failUrl: `${origin}/checkout/fail`,
       })
     } catch (e: unknown) {
-      if (e instanceof Error) {
-        if (e.message === 'PAY_PROCESS_CANCELED') {
-          // 사용자가 결제창을 닫은 경우 — 조용히 처리
-        } else {
-          setPayError(`결제 오류: ${e.message}`)
-          console.error('[Toss 결제 오류]', e)
-        }
-      }
+      const msg = e instanceof Error ? e.message : String(e)
+      console.error('[Toss 결제 오류]', msg, e)
+      setPayError(`결제 오류 (${msg}) — 화면 하단 오류 메시지를 캡처해서 공유해주세요.`)
       setLoading(false)
     }
   }
