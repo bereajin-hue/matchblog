@@ -28,8 +28,8 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https://*.supabase.co",
       "font-src 'self'",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.tosspayments.com",
-      "frame-src https://js.tosspayments.com",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.tosspayments.com https://log.tosspayments.com https://event.tosspayments.com",
+      "frame-src https://js.tosspayments.com https://*.tosspayments.com",
     ].join('; '),
   },
 ]
