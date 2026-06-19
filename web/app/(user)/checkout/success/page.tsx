@@ -5,21 +5,23 @@ import Link from 'next/link'
 export const dynamic = 'force-dynamic'
 
 interface Props {
-  searchParams: Promise<{ paymentKey?: string; orderId?: string; amount?: string }>
+  searchParams: Promise<{ paymentKey?: string; orderId?: string; amount?: string; dbOrderId?: string }>
 }
 
 export default async function CheckoutSuccessPage({ searchParams }: Props) {
-  const { paymentKey, orderId, amount } = await searchParams
+  const { paymentKey, orderId: tossOrderId, amount, dbOrderId } = await searchParams
 
-  if (!paymentKey || !orderId || !amount) redirect('/apply')
+  // dbOrderId = 실제 DB UUID, tossOrderId = Toss가 반환하는 tossOrderId (uuid-timestamp)
+  const realOrderId = dbOrderId ?? tossOrderId
+  if (!paymentKey || !tossOrderId || !amount || !realOrderId) redirect('/apply')
 
-  // 서버에서 결제 승인 API 호출
+  // 서버에서 결제 승인 API 호출 (orderId는 DB UUID 사용)
   const res = await fetch(
     `${process.env.NEXTAUTH_URL ?? 'http://localhost:3000'}/api/payments/confirm`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ paymentKey, orderId, amount: Number(amount) }),
+      body: JSON.stringify({ paymentKey, orderId: realOrderId, amount: Number(amount) }),
     }
   )
 
@@ -32,7 +34,7 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
   const { data: order } = await supabase
     .from('orders')
     .select('product_type, amount')
-    .eq('id', orderId)
+    .eq('id', realOrderId)
     .single()
 
   return (
@@ -47,7 +49,7 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
         <div className="bg-blue-50 rounded-xl p-4 mb-6 text-sm text-left space-y-1">
           <div className="flex justify-between">
             <span className="text-gray-500">주문번호</span>
-            <span className="font-mono text-xs">{orderId}</span>
+            <span className="font-mono text-xs">{realOrderId}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-500">결제 금액</span>
