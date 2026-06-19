@@ -1,20 +1,28 @@
 import Link from 'next/link'
 
 interface Props {
-  searchParams: Promise<{ message?: string; orderId?: string }>
+  searchParams: Promise<{ message?: string; orderId?: string; code?: string }>
 }
 
 export default async function CheckoutFailPage({ searchParams }: Props) {
-  const { message, orderId } = await searchParams
+  const { message, orderId, code } = await searchParams
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
         <div className="text-6xl mb-4">😞</div>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">결제에 실패했습니다</h1>
-        <p className="text-gray-500 mb-6">
-          {message ? decodeURIComponent(message) : '결제 처리 중 오류가 발생했습니다.'}
-        </p>
+
+        {/* 에러 상세 (디버깅용) */}
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 text-left">
+          {code && (
+            <p className="text-xs text-red-500 font-mono mb-1">코드: {code}</p>
+          )}
+          <p className="text-sm text-red-700">
+            {message ? decodeURIComponent(message) : '결제 처리 중 오류가 발생했습니다.'}
+          </p>
+        </div>
+
         <div className="space-y-3">
           {orderId && (
             <Link
@@ -31,6 +39,11 @@ export default async function CheckoutFailPage({ searchParams }: Props) {
             신청서로 돌아가기
           </Link>
         </div>
+
+        {/* URL 파라미터 전체 표시 (디버깅용) */}
+        <p className="text-xs text-gray-300 mt-4 break-all">
+          orderId: {orderId ?? '없음'}
+        </p>
       </div>
     </div>
   )
