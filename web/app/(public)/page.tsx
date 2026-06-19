@@ -68,8 +68,11 @@ export default function LandingPage() {
       </section>
 
       <footer className="py-8 px-4 border-t text-center text-sm text-gray-400">
-        <p>매치블로그 | 사업자번호: 000-00-00000 | 통신판매업신고: 제0000-서울-0000호</p>
-        <div className="flex justify-center gap-4 mt-2">
+        <p>상호명: 에이전트티 | 대표: 진민수 | 개인정보보호책임자: 진민수</p>
+        <p className="mt-1">사업자 등록번호: 126-56-00745 | 통신판매업신고: 제2024-화성동탄-1329호</p>
+        <p className="mt-1">관광사업등록번호: 제20244-00003호 | 이메일: help@agentt.kr</p>
+        <p className="mt-1">주소: 경기도 화성시 메타폴리스로 42, 9층 901호 (반송동, 디앤씨빌딩)</p>
+        <div className="flex justify-center gap-4 mt-3">
           <Link href="/terms/privacy" className="hover:underline">개인정보처리방침</Link>
           <Link href="/terms/service" className="hover:underline">이용약관</Link>
           <Link href="/terms/refund" className="hover:underline">환불정책</Link>
