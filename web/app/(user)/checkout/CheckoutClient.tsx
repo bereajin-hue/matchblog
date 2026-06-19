@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 interface Props {
   orderId: string
@@ -17,58 +17,37 @@ declare global {
 }
 
 export default function CheckoutClient({ orderId, amount, productName, customerName }: Props) {
-  const paymentRef = useRef<HTMLDivElement>(null)
-  const agreementRef = useRef<HTMLDivElement>(null)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const widgetsRef = useRef<any>(null)
   const [ready, setReady] = useState(false)
   const [loading, setLoading] = useState(false)
   const [payError, setPayError] = useState('')
 
   useEffect(() => {
     const script = document.createElement('script')
-    script.src = 'https://js.tosspayments.com/v2/standard'
+    script.src = 'https://js.tosspayments.com/v1/payment'
     script.async = true
-    script.onload = async () => {
-      const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY
-      if (!clientKey) {
-        setPayError('토스페이먼츠 클라이언트 키가 설정되지 않았습니다. .env.local을 확인하세요.')
-        return
-      }
-      if (!window.TossPayments) {
-        setPayError('토스페이먼츠 스크립트 로드 실패. 새로고침 후 다시 시도하세요.')
-        return
-      }
-
-      const toss = window.TossPayments(clientKey)
-      const widgets = toss.widgets({ customerKey: `user_${orderId}` })
-      widgetsRef.current = widgets
-
-      await widgets.setAmount({ currency: 'KRW', value: amount })
-
-      if (paymentRef.current) {
-        await widgets.renderPaymentMethods({
-          selector: '#payment-widget',
-        })
-      }
-      if (agreementRef.current) {
-        await widgets.renderAgreement({
-          selector: '#agreement-widget',
-        })
-      }
-      setReady(true)
-    }
+    script.onload = () => setReady(true)
+    script.onerror = () => setPayError('토스페이먼츠 스크립트 로드에 실패했습니다. 새로고침해주세요.')
     document.head.appendChild(script)
     return () => { document.head.removeChild(script) }
-  }, [orderId, amount])
+  }, [])
 
   async function handlePay() {
-    if (!widgetsRef.current || loading) return
+    if (!ready || loading) return
     setLoading(true)
     setPayError('')
+
+    const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY
+    if (!clientKey) {
+      setPayError('토스페이먼츠 클라이언트 키가 설정되지 않았습니다.')
+      setLoading(false)
+      return
+    }
+
     try {
+      const toss = window.TossPayments(clientKey)
       const origin = window.location.origin
-      await widgetsRef.current.requestPayment({
+      await toss.requestPayment('카드', {
+        amount,
         orderId,
         orderName: productName,
         customerName,
@@ -77,8 +56,9 @@ export default function CheckoutClient({ orderId, amount, productName, customerN
       })
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
-      console.error('[Toss 결제 오류]', msg, e)
-      setPayError(`결제 오류 (${msg}) — 화면 하단 오류 메시지를 캡처해서 공유해주세요.`)
+      if (msg !== 'PAY_PROCESS_CANCELED') {
+        setPayError(`결제 오류: ${msg}`)
+      }
       setLoading(false)
     }
   }
@@ -93,14 +73,14 @@ export default function CheckoutClient({ orderId, amount, productName, customerN
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-gray-500">상품명</span>
-            <span className="font-medium">{productName}</span>
+            <span className="font-medium text-gray-900">{productName}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-500">주문번호</span>
             <span className="font-mono text-xs text-gray-600">{orderId}</span>
           </div>
           <div className="flex justify-between pt-2 border-t">
-            <span className="font-semibold">결제 금액</span>
+            <span className="font-semibold text-gray-900">결제 금액</span>
             <span className="text-xl font-bold text-blue-600">{amount.toLocaleString()}원</span>
           </div>
         </div>
@@ -110,22 +90,9 @@ export default function CheckoutClient({ orderId, amount, productName, customerN
         </div>
       </div>
 
-      {/* 토스페이먼츠 결제 위젯 */}
-      <div className="bg-white rounded-xl shadow overflow-hidden mb-6">
-        <div id="payment-widget" ref={paymentRef} />
-        <div id="agreement-widget" ref={agreementRef} />
-      </div>
-
       {payError && (
         <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-lg mb-4">
           {payError}
-        </div>
-      )}
-
-      {!ready && (
-        <div className="text-center py-8 text-gray-400">
-          <div className="animate-spin w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-2" />
-          결제 수단 로딩 중...
         </div>
       )}
 
@@ -134,8 +101,9 @@ export default function CheckoutClient({ orderId, amount, productName, customerN
         disabled={!ready || loading}
         className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold rounded-xl text-lg transition-colors"
       >
-        {loading ? '처리 중...' : `${amount.toLocaleString()}원 결제하기`}
+        {loading ? '처리 중...' : !ready ? '로딩 중...' : `${amount.toLocaleString()}원 카드 결제하기`}
       </button>
+      <p className="text-xs text-gray-400 text-center mt-2">토스페이먼츠 안전 결제</p>
     </div>
   )
 }
