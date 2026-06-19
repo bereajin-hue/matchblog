@@ -49,13 +49,11 @@ export default function CheckoutClient({ orderId, amount, productName, customerN
       if (paymentRef.current) {
         await widgets.renderPaymentMethods({
           selector: '#payment-widget',
-          variantKey: 'DEFAULT',
         })
       }
       if (agreementRef.current) {
         await widgets.renderAgreement({
           selector: '#agreement-widget',
-          variantKey: 'AGREEMENT',
         })
       }
       setReady(true)
