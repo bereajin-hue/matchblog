@@ -46,18 +46,21 @@ export default function CheckoutClient({ orderId, amount, productName, customerN
     try {
       const toss = window.TossPayments(clientKey)
       const origin = window.location.origin
+      // 결제 시도마다 고유한 tossOrderId 생성 (DB orderId는 메타데이터로 전달)
+      const tossOrderId = `${orderId}-${Date.now()}`
       await toss.requestPayment('카드', {
         amount,
-        orderId,
+        orderId: tossOrderId,
         orderName: productName,
         customerName,
-        successUrl: `${origin}/checkout/success`,
-        failUrl: `${origin}/checkout/fail`,
+        successUrl: `${origin}/checkout/success?dbOrderId=${orderId}`,
+        failUrl: `${origin}/checkout/fail?orderId=${orderId}`,
       })
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e)
+      const msg = e instanceof Error ? e.message : (typeof e === 'object' && e !== null && 'message' in e ? String((e as {message: unknown}).message) : String(e))
       if (msg !== 'PAY_PROCESS_CANCELED') {
         setPayError(`결제 오류: ${msg}`)
+        console.error('[Toss 결제 오류]', e)
       }
       setLoading(false)
     }
