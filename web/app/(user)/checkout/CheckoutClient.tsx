@@ -57,10 +57,12 @@ export default function CheckoutClient({ orderId, amount, productName, customerN
         failUrl: `${origin}/checkout/fail?orderId=${orderId}`,
       })
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : (typeof e === 'object' && e !== null && 'message' in e ? String((e as {message: unknown}).message) : String(e))
-      if (msg !== 'PAY_PROCESS_CANCELED') {
-        setPayError(`결제 오류: ${msg}`)
-        console.error('[Toss 결제 오류]', e)
+      console.error('[Toss 결제 오류 전체]', JSON.stringify(e), e)
+      const errObj = e as Record<string, unknown>
+      const code = errObj?.code ? String(errObj.code) : ''
+      const msg = errObj?.message ? String(errObj.message) : (e instanceof Error ? e.message : String(e))
+      if (code !== 'PAY_PROCESS_CANCELED' && msg !== 'PAY_PROCESS_CANCELED') {
+        setPayError(`결제 오류 [${code}]: ${msg}`)
       }
       setLoading(false)
     }
