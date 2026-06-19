@@ -1,5 +1,6 @@
 export default function ServiceTermsPage() {
   return (
+    <div className="min-h-screen bg-white">
     <div className="max-w-3xl mx-auto px-4 py-12">
       <h1 className="text-2xl font-bold text-gray-900 mb-8">이용약관</h1>
       <div className="text-gray-700 space-y-6 text-sm leading-relaxed">
@@ -150,6 +151,7 @@ export default function ServiceTermsPage() {
         </section>
 
       </div>
+    </div>
     </div>
   )
 }
