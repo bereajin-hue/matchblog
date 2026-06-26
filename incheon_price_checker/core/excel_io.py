@@ -5,6 +5,8 @@ from __future__ import annotations
 
 from typing import Any
 
+import re
+
 import openpyxl
 from openpyxl.styles import PatternFill
 from openpyxl.utils import get_column_letter
@@ -31,6 +33,15 @@ _FILL = {
     VERDICT_HOLD:    PatternFill("solid", fgColor=COLOR_HOLD),
     VERDICT_REJECT:  PatternFill("solid", fgColor=COLOR_REJECT),
 }
+
+
+_INVALID_SHEET_CHARS = re.compile(r"[\\/*?:\[\]]")
+
+
+def _safe_sheet_title(name: str) -> str:
+    """엑셀 시트명 불가 문자 제거 후 31자 제한."""
+    cleaned = _INVALID_SHEET_CHARS.sub("", name).strip() or "시트"
+    return cleaned[:31]
 
 
 def _to_int(value: Any) -> int:
@@ -173,12 +184,13 @@ def save_results(
 
         first = True
         for md_name, md_prods in md_groups.items():
+            safe_title = _safe_sheet_title(md_name)
             if first:
                 ws = wb_out.active
-                ws.title = md_name[:31]  # 시트명 31자 제한
+                ws.title = safe_title
                 first = False
             else:
-                ws = wb_out.create_sheet(title=md_name[:31])
+                ws = wb_out.create_sheet(title=safe_title)
             make_sheet(ws, md_prods)
     else:
         ws = wb_out.active
