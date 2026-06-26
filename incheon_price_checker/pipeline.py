@@ -1,11 +1,12 @@
 """
-STEP 1~7 파이프라인 — 상품 1건씩 순차 처리.
+STEP 1~7 파이프라인 — 상품을 병렬로 처리.
 GUI 스레드와 분리해 별도 스레드에서 실행.
 상품별 에러는 건너뛰고 로그만 남김 (전체 중단 방지).
 """
 from __future__ import annotations
 
 import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
@@ -19,6 +20,9 @@ from core.prefilter import filter_candidates
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
+
+# 상품 단위 병렬 처리 워커 수 (Naver+Gemini API 레이트리밋 고려)
+_PRODUCT_WORKERS = 5
 
 
 @dataclass
@@ -49,6 +53,7 @@ class Pipeline:
         self._cb  = callbacks
         self._stop_event = threading.Event()
         self._thread: threading.Thread | None = None
+        self._lock = threading.Lock()
 
     def start(self) -> None:
         self._stop_event.clear()
@@ -69,40 +74,63 @@ class Pipeline:
             total = len(products)
             logger.info("엑셀 로드: %d건", total)
 
+            # Naver API 세마포어 설정 (전체 동시 HTTP 요청 제한)
             set_concurrency(cfg.concurrency)
 
-            results: list[dict] = []
+            # 순서 보존을 위한 결과 배열
+            results: list[dict | None] = [None] * total
             done = hold = reject = 0
 
-            for product in products:
-                if self._stop_event.is_set():
-                    self._cb.on_status("중단됨")
-                    break
+            workers = min(_PRODUCT_WORKERS, total, cfg.concurrency)
+            self._cb.on_status(f"병렬 처리 시작 (워커 {workers}개)…")
 
-                name = product.get("상품명", "")
-                code = product.get("상품코드", "")
-                self._cb.on_status(f"[{done+1}/{total}] {name[:35]}…")
+            with ThreadPoolExecutor(max_workers=workers) as executor:
+                future_to_idx = {
+                    executor.submit(self._process_one_safe, product, cfg, i): i
+                    for i, product in enumerate(products)
+                }
 
-                try:
-                    result = self._process_one(product, cfg)
-                except Exception as exc:
-                    logger.error("상품 처리 오류 [%s] %s: %s", code, name[:40], exc, exc_info=True)
-                    result = _error_result(product, str(exc))
+                for future in as_completed(future_to_idx):
+                    if self._stop_event.is_set():
+                        executor.shutdown(wait=False, cancel_futures=True)
+                        self._cb.on_status("중단됨")
+                        break
 
-                results.append(result)
-                done += 1
-                if result["verdict"] == "보류":    hold   += 1
-                if result["verdict"] == "반려":    reject += 1
+                    idx = future_to_idx[future]
+                    product = products[idx]
+                    result = future.result()
+                    results[idx] = result
 
-                self._cb.on_progress(done, total, hold, reject)
-                self._cb.on_result_row({**product, **result})
+                    with self._lock:
+                        done += 1
+                        if result["verdict"] == "보류":
+                            hold += 1
+                        if result["verdict"] == "반려":
+                            reject += 1
+                        _done, _hold, _reject = done, hold, reject
 
+                    name = product.get("상품명", "")
+                    self._cb.on_status(f"[{_done}/{total}] {name[:35]}… 완료")
+                    self._cb.on_progress(_done, total, _hold, _reject)
+                    self._cb.on_result_row({**product, **result})
+
+            valid_results = [r for r in results if r is not None]
             self._cb.on_status(f"완료 — 총 {done}건 (보류 {hold} / 반려 {reject})")
-            self._cb.on_done(products, results)
+            self._cb.on_done(products, valid_results)
 
         except Exception as exc:
             logger.error("파이프라인 오류: %s", exc, exc_info=True)
             self._cb.on_error(str(exc))
+
+    def _process_one_safe(self, product: dict[str, Any], cfg: PipelineConfig, idx: int) -> dict[str, Any]:
+        """에러 핸들링 포함 단일 상품 처리."""
+        code = product.get("상품코드", "")
+        name = product.get("상품명", "")
+        try:
+            return self._process_one(product, cfg)
+        except Exception as exc:
+            logger.error("상품 처리 오류 [%s] %s: %s", code, name[:40], exc, exc_info=True)
+            return _error_result(product, str(exc))
 
     def _process_one(self, product: dict[str, Any], cfg: PipelineConfig) -> dict[str, Any]:
         """상품 1건 STEP 2~7 처리."""
