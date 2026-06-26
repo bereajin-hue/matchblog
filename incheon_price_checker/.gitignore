@@ -1,0 +1,10 @@
+data/cache/
+data/output/
+data/input/
+settings.json
+__pycache__/
+*.pyc
+*.pyo
+dist/
+build/
+*.spec.bak
