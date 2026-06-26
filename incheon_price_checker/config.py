@@ -29,6 +29,7 @@ NAVER_DEFAULT_SORT = "sim"  # sim / date / asc / dsc
 # ── 동시성 / rate limit ───────────────────────────────────────────────────────
 DEFAULT_CONCURRENCY = 5     # GUI 입력값
 DEFAULT_BATCH_SIZE = 12     # Gemini 배치 크기 (후보 N개/콜)
+MAX_GEMINI_CANDIDATES = 10  # Gemini로 보내는 후보 최대 수 (토큰 절감)
 
 # ── 판정 임계값 ───────────────────────────────────────────────────────────────
 # 시중가격 대비 AI최저가가 이 비율 이내이면 APPROVE (예: 0.05 = 5% 이내)

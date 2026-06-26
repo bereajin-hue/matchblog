@@ -14,7 +14,7 @@ from typing import Any
 
 from rapidfuzz import fuzz
 
-from config import PREFILTER_EXCLUDE_KEYWORDS, PREFILTER_TOKEN_THRESHOLD
+from config import MAX_GEMINI_CANDIDATES, PREFILTER_EXCLUDE_KEYWORDS, PREFILTER_TOKEN_THRESHOLD
 from core.keyword import generate_keyword
 from utils.logger import get_logger
 
@@ -109,11 +109,16 @@ def filter_candidates(
             removed_count += 1
             continue
 
+        cand["_prefilter_score"] = score
         kept.append(cand)
 
     total = len(candidates)
+    # rapidfuzz 점수 내림차순 정렬 후 상위 MAX_GEMINI_CANDIDATES개만 반환
+    kept.sort(key=lambda c: c.get("_prefilter_score", 0), reverse=True)
+    kept = kept[:MAX_GEMINI_CANDIDATES]
+
     logger.info(
-        "사전필터: %d/%d 통과 (%d 제거) | 기준='%s'",
-        len(kept), total, removed_count, product_name[:40],
+        "사전필터: %d/%d 통과 (%d 제거) → Gemini 전달 %d건 | 기준='%s'",
+        len(kept), total, removed_count, len(kept), product_name[:40],
     )
     return kept

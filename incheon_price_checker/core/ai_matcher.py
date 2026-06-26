@@ -74,23 +74,7 @@ def match_candidates(
     # ── 1차 판정 ──────────────────────────────────────────────
     _run_batch(base_product, results, gemini_api_key, model_name, batch_size)
 
-    # ── 2-tier: SIMILAR / 파싱 실패 → 상위 모델 재판정 ────────
-    # 이미 상위 모델이거나 flash가 아니면 재판정 불필요
-    upper_model = _upper_model(model_name)
-    if upper_model and upper_model != model_name:
-        retry_indices = [
-            i for i, c in enumerate(results)
-            if c.get("match_level") == "SIMILAR" or not c.get("_parse_ok", True)
-        ]
-        if retry_indices:
-            logger.info(
-                "2-tier 재판정: %d건 → %s", len(retry_indices), upper_model
-            )
-            subset = [results[i] for i in retry_indices]
-            _run_batch(base_product, subset, gemini_api_key, upper_model, batch_size)
-            for new_idx, orig_idx in enumerate(retry_indices):
-                results[orig_idx] = subset[new_idx]
-
+    # 2-tier(flash→pro 재판정) 비활성화 — 토큰 절감 우선
     return results
 
 
