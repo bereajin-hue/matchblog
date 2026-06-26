@@ -14,6 +14,7 @@ PROMPT_DIR = os.path.join(BASE_DIR, "prompts")
 # ── 기본 모델 ─────────────────────────────────────────────────────────────────
 DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
 GEMINI_MODEL_OPTIONS = [
+    "gemini-2.5-flash-lite-preview-06-17",
     "gemini-2.5-flash",
     "gemini-2.5-pro",
     "gemini-3.5-flash",
