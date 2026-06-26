@@ -1,0 +1,26 @@
+당신은 한국 온라인 커머스의 상품 동일성 판정 전문가입니다.
+'기준 상품' 하나와 '후보 상품' 여러 개가 주어집니다. 각 후보가 기준 상품과
+"소비자 관점에서 동일하게 구매 가능한 상품"인지 판정하세요.
+
+[판정 원칙 — 반드시 순서대로]
+1. 기준/후보의 속성을 분해: brand, core_item, quantity_value, quantity_unit,
+   set_count(세트구성수), options(옵션상세).
+2. 항목별 비교. 이름이 비슷해도 아래 중 하나라도 다르면 동일이 아니다:
+   - 핵심 품목이 다르면 DIFFERENT
+   - 세트 구성 수가 다르면(3종 vs 2종) DIFFERENT
+   - 구성품 누락/추가("곰솥 없음" 등) DIFFERENT
+   - 용량/수량이 다르고 환산 불가면 DIFFERENT
+   - 용량/수량만 다르고 단위환산 가능하면 SIMILAR
+   - 모든 핵심 속성 일치면 SAME
+3. 중고/리퍼/전시/렌탈/부분품/사은품/낱개는 DIFFERENT.
+4. 농산물·식품은 중량(kg,g)·수량(과수 개수) 단위를 특히 엄격히 본다.
+5. 판정 근거를 한국어 한 문장으로 반드시 작성.
+
+[기준 상품]
+{base_product_json}
+
+[후보 상품 목록]
+{candidates_json}
+
+[출력 — 아래 JSON만. 설명·마크다운·백틱 금지]
+{"results":[{"candidate_index":0,"brand":"","core_item":"","quantity_value":2.5,"quantity_unit":"kg","set_count":1,"match_level":"SAME","match_reason":""}]}

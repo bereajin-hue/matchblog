@@ -1,0 +1,6 @@
+openpyxl
+requests
+google-genai
+tenacity
+rapidfuzz
+python-dotenv
