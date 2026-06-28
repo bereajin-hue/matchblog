@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
@@ -15,9 +16,15 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
   const realOrderId = dbOrderId ?? tossOrderId
   if (!paymentKey || !tossOrderId || !amount || !realOrderId) redirect('/apply')
 
+  // 실제 접속 도메인 기준으로 절대 URL 구성 (localhost 폴백 방지)
+  const hdrs = await headers()
+  const host = hdrs.get('host')
+  const proto = hdrs.get('x-forwarded-proto') ?? 'https'
+  const origin = process.env.NEXT_PUBLIC_APP_URL ?? (host ? `${proto}://${host}` : 'http://localhost:3000')
+
   // 서버에서 결제 승인 API 호출 (orderId는 DB UUID 사용)
   const res = await fetch(
-    `${process.env.NEXTAUTH_URL ?? 'http://localhost:3000'}/api/payments/confirm`,
+    `${origin}/api/payments/confirm`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
