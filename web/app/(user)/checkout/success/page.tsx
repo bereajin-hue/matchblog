@@ -56,7 +56,7 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
         <div className="bg-blue-50 rounded-xl p-4 mb-6 text-sm text-left space-y-1">
           <div className="flex justify-between">
             <span className="text-gray-500">주문번호</span>
-            <span className="font-mono text-xs">{realOrderId}</span>
+            <span className="font-mono text-xs text-gray-900">{realOrderId}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-500">결제 금액</span>
