@@ -24,7 +24,7 @@ export default function ApplyClient() {
   const videoRef = useRef<HTMLInputElement>(null)
 
   const imageOk = images.length >= 20
-  const videoOk = product === 'basic' || videos.length >= 3
+  const videoOk = product === 'basic' || videos.length >= 1
   const canSubmit = imageOk && videoOk && agreedCompliance && agreedNoGuarantee && !loading
 
   function handleImages(e: React.ChangeEvent<HTMLInputElement>) {
@@ -46,7 +46,7 @@ export default function ApplyClient() {
     setError('')
 
     if (!imageOk) { setError('사진을 20장 이상 선택해주세요.'); return }
-    if (!videoOk) { setError('프로 상품은 영상을 3개 이상 선택해주세요.'); return }
+    if (!videoOk) { setError('프로 상품은 영상을 1개 이상 선택해주세요.'); return }
     if (!agreedCompliance || !agreedNoGuarantee) { setError('필수 동의 항목을 모두 체크해주세요.'); return }
 
     const form = e.currentTarget
@@ -175,7 +175,7 @@ export default function ApplyClient() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 홍보 영상 <span className="text-red-500">*</span>
-                <span className="text-gray-400 font-normal"> (최소 3개, 개당 최대 100MB)</span>
+                <span className="text-gray-400 font-normal"> (최소 1개, 개당 최대 100MB)</span>
               </label>
               <input ref={videoRef} type="file" multiple accept="video/*" onChange={handleVideos}
                 className="hidden" />
@@ -184,7 +184,7 @@ export default function ApplyClient() {
                 🎬 영상 선택하기
               </button>
               <p className={`mt-1 text-sm font-medium ${videoOk ? 'text-green-600' : 'text-red-500'}`}>
-                {videos.length}개 선택됨 {!videoOk && `(최소 3개 필요)`}
+                {videos.length}개 선택됨 {!videoOk && `(최소 1개 필요)`}
               </p>
             </div>
           )}

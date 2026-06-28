@@ -59,8 +59,8 @@ export async function POST(request: NextRequest) {
   if (imageCount < 20) {
     return NextResponse.json({ error: '사진을 20장 이상 업로드해주세요.' }, { status: 400 })
   }
-  if (product_type === 'pro' && videoCount < 3) {
-    return NextResponse.json({ error: '프로 상품은 영상을 3개 이상 업로드해주세요.' }, { status: 400 })
+  if (product_type === 'pro' && videoCount < 1) {
+    return NextResponse.json({ error: '프로 상품은 영상을 1개 이상 업로드해주세요.' }, { status: 400 })
   }
 
   // 업로드된 파일이 본인 폴더({uid}/...)에 속하는지 검증 — 위조 경로 차단
