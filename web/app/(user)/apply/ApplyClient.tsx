@@ -70,8 +70,8 @@ export default function ApplyClient() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">서비스 신청</h1>
-      <p className="text-sm text-gray-500 mb-8">모든 포스팅에는 공정위 광고 표시 문구가 포함됩니다.</p>
+      <h1 className="text-2xl font-bold text-white mb-2">서비스 신청</h1>
+      <p className="text-sm text-gray-300 mb-8">모든 포스팅에는 공정위 광고 표시 문구가 포함됩니다.</p>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* 상품 선택 */}
