@@ -28,7 +28,12 @@ async function Nav() {
   return (
     <nav className="bg-white border-b border-gray-200 px-4 py-3">
       <div className="max-w-5xl mx-auto flex items-center justify-between">
-        <Link href="/" className="font-bold text-lg text-blue-600">매치블로그</Link>
+        <Link href="/" className="flex items-center gap-2">
+          <span className="flex items-center justify-center w-8 h-8 bg-amber-400 rounded-lg font-black text-[#0d1b2a] text-lg">M</span>
+          <span className="font-black text-xl tracking-tight">
+            <span className="text-[#0d1b2a]">MATCH</span><span className="text-amber-400">BLOG</span>
+          </span>
+        </Link>
         <div className="flex items-center gap-4 text-sm">
           {user ? (
             <>

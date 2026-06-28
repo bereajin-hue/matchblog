@@ -340,7 +340,12 @@ export default function LandingPage() {
           푸터
       ─────────────────────────────────────────── */}
       <footer className="py-10 px-4 bg-[#080f1a] border-t border-white/5 text-center text-sm text-slate-500">
-        <p className="font-semibold text-slate-400 mb-2">매치블로그 (MatchBlog)</p>
+        <div className="flex items-center justify-center gap-2 mb-3">
+          <span className="flex items-center justify-center w-7 h-7 bg-amber-400 rounded-lg font-black text-[#0d1b2a] text-base">M</span>
+          <span className="font-black text-lg tracking-tight">
+            <span className="text-slate-300">MATCH</span><span className="text-amber-400">BLOG</span>
+          </span>
+        </div>
         <p>상호명: 에이전트티 | 대표: 진민수 | 개인정보보호책임자: 진민수</p>
         <p className="mt-1">사업자 등록번호: 126-56-00745 | 통신판매업신고: 제2024-화성동탄-1329호</p>
         <p className="mt-1">관광사업등록번호: 제20244-00003호 | 이메일: help@agentt.kr</p>
