@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 const PRODUCT_PRICES = { basic: 99000, pro: 165000 }
 
@@ -17,6 +18,7 @@ export default function ApplyClient() {
   const [agreedNoGuarantee, setAgreedNoGuarantee] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
 
   const imageRef = useRef<HTMLInputElement>(null)
   const videoRef = useRef<HTMLInputElement>(null)
@@ -49,15 +51,55 @@ export default function ApplyClient() {
 
     const form = e.currentTarget
     const formData = new FormData(form)
-    formData.set('product_type', product)
-    formData.set('agreed_compliance', 'true')
-    formData.set('agreed_no_guarantee', 'true')
-    images.forEach(f => formData.append('images', f))
-    videos.forEach(f => formData.append('videos', f))
 
     setLoading(true)
     try {
-      const res = await fetch('/api/orders', { method: 'POST', body: formData })
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setError('로그인이 필요합니다. 다시 로그인해주세요.')
+        return
+      }
+
+      // 1) 파일을 Supabase Storage에 직접 업로드 (API 본문 크기 제한 회피)
+      const uploads: { type: 'image' | 'video'; file: File }[] = [
+        ...images.map(f => ({ type: 'image' as const, file: f })),
+        ...videos.map(f => ({ type: 'video' as const, file: f })),
+      ]
+      setProgress({ done: 0, total: uploads.length })
+
+      const assets: { type: 'image' | 'video'; storage_path: string }[] = []
+      for (let i = 0; i < uploads.length; i++) {
+        const { type, file } = uploads[i]
+        const ext = file.name.split('.').pop() ?? (type === 'image' ? 'jpg' : 'mp4')
+        const path = `${user.id}/${crypto.randomUUID()}.${ext}`
+        const { error: upErr } = await supabase.storage
+          .from('order-assets')
+          .upload(path, file, { contentType: file.type })
+        if (upErr) {
+          setError(`파일 업로드 실패: ${file.name}`)
+          setProgress(null)
+          return
+        }
+        assets.push({ type, storage_path: path })
+        setProgress({ done: i + 1, total: uploads.length })
+      }
+
+      // 2) 주문 메타데이터 + 업로드 경로만 API로 전송 (JSON)
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          place_url: formData.get('place_url'),
+          applicant_name: formData.get('applicant_name'),
+          business_no: formData.get('business_no'),
+          phone: formData.get('phone'),
+          product_type: product,
+          agreed_compliance: true,
+          agreed_no_guarantee: true,
+          assets,
+        }),
+      })
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? '신청 중 오류가 발생했습니다.'); return }
       router.push(`/checkout?orderId=${data.orderId}`)
@@ -65,6 +107,7 @@ export default function ApplyClient() {
       setError('네트워크 오류가 발생했습니다. 다시 시도해주세요.')
     } finally {
       setLoading(false)
+      setProgress(null)
     }
   }
 
@@ -183,9 +226,23 @@ export default function ApplyClient() {
             </span>
           </div>
           <p className="text-xs text-gray-400 mb-4">발행 전 100% 환불 · 발행 후 환불 불가</p>
+          {progress && (
+            <div className="mb-3">
+              <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <span>파일 업로드 중...</span>
+                <span>{progress.done}/{progress.total}</span>
+              </div>
+              <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="h-full bg-blue-600 transition-all"
+                  style={{ width: `${progress.total ? (progress.done / progress.total) * 100 : 0}%` }} />
+              </div>
+            </div>
+          )}
           <button type="submit" disabled={!canSubmit}
             className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-colors text-lg">
-            {loading ? '처리 중...' : '결제하기'}
+            {loading
+              ? (progress ? `업로드 중 ${progress.done}/${progress.total}...` : '처리 중...')
+              : '결제하기'}
           </button>
           {!canSubmit && !loading && (
             <p className="text-xs text-gray-400 text-center mt-2">

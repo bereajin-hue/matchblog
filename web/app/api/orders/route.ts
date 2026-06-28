@@ -17,8 +17,13 @@ const OrderSchema = z.object({
   business_no: z.string().regex(/^\d{3}-\d{2}-\d{5}$/, '사업자번호 형식: 000-00-00000'),
   phone: z.string().regex(/^01[0-9]-\d{3,4}-\d{4}$/, '연락처 형식: 010-0000-0000'),
   product_type: z.enum(['basic', 'pro']),
-  agreed_compliance: z.literal('true', { message: '광고표시 동의가 필요합니다.' }),
-  agreed_no_guarantee: z.literal('true', { message: '효과 비보장 동의가 필요합니다.' }),
+  agreed_compliance: z.literal(true, { message: '광고표시 동의가 필요합니다.' }),
+  agreed_no_guarantee: z.literal(true, { message: '효과 비보장 동의가 필요합니다.' }),
+  // 파일은 클라이언트가 Storage에 직접 업로드한 뒤 경로만 전달한다 (Vercel 4.5MB 본문 제한 회피)
+  assets: z.array(z.object({
+    type: z.enum(['image', 'video']),
+    storage_path: z.string().min(1).max(300),
+  })).max(120),
 })
 
 export async function POST(request: NextRequest) {
@@ -31,26 +36,38 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
 
-  const formData = await request.formData()
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: '잘못된 요청입니다.' }, { status: 400 })
+  }
 
-  const parsed = OrderSchema.safeParse({
-    place_url: formData.get('place_url'),
-    applicant_name: formData.get('applicant_name'),
-    business_no: formData.get('business_no'),
-    phone: formData.get('phone'),
-    product_type: formData.get('product_type'),
-    agreed_compliance: formData.get('agreed_compliance'),
-    agreed_no_guarantee: formData.get('agreed_no_guarantee'),
-  })
+  const parsed = OrderSchema.safeParse(body)
 
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { product_type, agreed_compliance, agreed_no_guarantee, ...fields } = parsed.data
+  const { product_type, assets, ...fields } = parsed.data
   // 서버에서 금액 재계산 — 클라이언트 금액 절대 신뢰 금지
   const amount = PRODUCT_PRICES[product_type]
+
+  // 사진 최소 20장 / 프로는 영상 최소 3개 — 서버 재검증
+  const imageCount = assets.filter(a => a.type === 'image').length
+  const videoCount = assets.filter(a => a.type === 'video').length
+  if (imageCount < 20) {
+    return NextResponse.json({ error: '사진을 20장 이상 업로드해주세요.' }, { status: 400 })
+  }
+  if (product_type === 'pro' && videoCount < 3) {
+    return NextResponse.json({ error: '프로 상품은 영상을 3개 이상 업로드해주세요.' }, { status: 400 })
+  }
+
+  // 업로드된 파일이 본인 폴더({uid}/...)에 속하는지 검증 — 위조 경로 차단
+  const invalid = assets.some(a => !a.storage_path.startsWith(`${user.id}/`))
+  if (invalid) {
+    return NextResponse.json({ error: '유효하지 않은 파일 경로입니다.' }, { status: 400 })
+  }
 
   const adminClient = createAdminClient()
 
@@ -75,28 +92,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: '주문 생성에 실패했습니다.' }, { status: 500 })
   }
 
-  // 파일 업로드 (Supabase Storage)
-  const imageFiles = formData.getAll('images') as File[]
-  const videoFiles = formData.getAll('videos') as File[]
-
-  for (const file of imageFiles) {
-    if (file.size === 0 || !file.type.startsWith('image/') || file.size > 10 * 1024 * 1024) continue
-    const ext = file.name.split('.').pop() ?? 'jpg'
-    const path = `${order.id}/${crypto.randomUUID()}.${ext}`
-    const { error } = await adminClient.storage.from('order-assets').upload(path, file, { contentType: file.type })
-    if (!error) {
-      await adminClient.from('order_assets').insert({ order_id: order.id, type: 'image', storage_path: path })
-    }
-  }
-
-  for (const file of videoFiles) {
-    if (file.size === 0 || !file.type.startsWith('video/') || file.size > 100 * 1024 * 1024) continue
-    const ext = file.name.split('.').pop() ?? 'mp4'
-    const path = `${order.id}/${crypto.randomUUID()}.${ext}`
-    const { error } = await adminClient.storage.from('order-assets').upload(path, file, { contentType: file.type })
-    if (!error) {
-      await adminClient.from('order_assets').insert({ order_id: order.id, type: 'video', storage_path: path })
-    }
+  // 클라이언트가 이미 Storage에 올린 파일 경로를 order_assets에 기록
+  const assetRows = assets.map(a => ({
+    order_id: order.id,
+    type: a.type,
+    storage_path: a.storage_path,
+  }))
+  const { error: assetError } = await adminClient.from('order_assets').insert(assetRows)
+  if (assetError) {
+    return NextResponse.json({ error: '파일 정보 저장에 실패했습니다.' }, { status: 500 })
   }
 
   return NextResponse.json({ orderId: order.id })
