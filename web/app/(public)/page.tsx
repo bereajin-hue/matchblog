@@ -288,6 +288,7 @@ export default function LandingPage() {
                   '네이버 클립 영상 1개',
                   'Blogger 1개',
                   '사진 20장+ 및 영상 3개 필요',
+                  'N사 플레이스 무료 컨설팅',
                   '공정위 광고 표시 문구 포함',
                   '발행 전 100% 환불 보장',
                 ].map((item) => (
