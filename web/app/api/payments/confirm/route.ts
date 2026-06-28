@@ -5,7 +5,8 @@ import { PRODUCT_PRICES } from '@/lib/toss/config'
 
 const ConfirmSchema = z.object({
   paymentKey: z.string().min(1),
-  orderId: z.string().uuid(),
+  orderId: z.string().uuid(),           // DB 주문 UUID
+  tossOrderId: z.string().min(1),       // 토스 결제 시 사용한 orderId (uuid-timestamp)
   amount: z.number().int().positive(),
 })
 
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: '잘못된 요청입니다.' }, { status: 400 })
   }
 
-  const { paymentKey, orderId, amount } = parsed.data
+  const { paymentKey, orderId, tossOrderId, amount } = parsed.data
   const adminClient = createAdminClient()
 
   // DB에서 주문 조회 및 금액 재검증 (클라이언트 금액 신뢰 금지)
@@ -45,7 +46,8 @@ export async function POST(request: NextRequest) {
       Authorization: `Basic ${encoded}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ paymentKey, orderId, amount }),
+    // 토스에는 결제 시 사용한 tossOrderId를 보내야 한다 (DB UUID 아님)
+    body: JSON.stringify({ paymentKey, orderId: tossOrderId, amount }),
   })
 
   const tossData = await tossRes.json()

@@ -28,7 +28,7 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ paymentKey, orderId: realOrderId, amount: Number(amount) }),
+      body: JSON.stringify({ paymentKey, orderId: realOrderId, tossOrderId, amount: Number(amount) }),
     }
   )
 
