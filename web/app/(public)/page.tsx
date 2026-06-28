@@ -101,15 +101,6 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* 분석 항목 미리보기 */}
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mt-8">
-            {['블로그 수', '사진 품질', '리뷰 수', '키워드', '응답률', '업데이트'].map((item) => (
-              <div key={item} className="bg-slate-50 border border-slate-100 rounded-lg py-3 px-2 text-center">
-                <div className="text-xs text-slate-500">{item}</div>
-                <div className="text-slate-300 text-lg font-bold mt-1">—</div>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
