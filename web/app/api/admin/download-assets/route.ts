@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     })
   )
 
-  const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' })
+  const zipBuffer = await zip.generateAsync({ type: 'arraybuffer' })
 
   return new NextResponse(zipBuffer, {
     headers: {
