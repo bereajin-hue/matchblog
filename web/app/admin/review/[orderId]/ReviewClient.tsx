@@ -58,6 +58,9 @@ export default function ReviewClient({ order, images, posts, isBlockedCategory }
   const [generating, setGenerating] = useState(false)
   const [publishing, setPublishing] = useState<string | null>(null)
   const [error, setError] = useState('')
+  const [extraNotes, setExtraNotes] = useState('')
+  const [jobStatus, setJobStatus] = useState<{id: string, status: string, log: string} | null>(null)
+  const [submitting, setSubmitting] = useState(false)
 
   const channels = order.product_type === 'pro' ? CHANNELS_PRO : CHANNELS_BASIC
   const adOk = draft ? Object.values(draft).every(d => d.includes('#광고') && d.includes('#협찬')) : false
@@ -99,6 +102,42 @@ export default function ReviewClient({ order, images, posts, isBlockedCategory }
     } finally {
       setPublishing(null)
     }
+  }
+
+  async function handleStartJob() {
+    setSubmitting(true)
+    setError('')
+    setJobStatus(null)
+    try {
+      const res = await fetch('/api/admin/posting-job', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: order.id, extraNotes }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error ?? '작업 생성 실패'); return }
+      setJobStatus({ id: data.jobId, status: 'pending', log: '' })
+      pollJobStatus(data.jobId)
+    } catch {
+      setError('작업 생성 중 오류가 발생했습니다.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  function pollJobStatus(jobId: string) {
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/admin/posting-job?jobId=${jobId}`)
+        const data = await res.json()
+        setJobStatus({ id: jobId, status: data.status, log: data.result_log ?? '' })
+        if (data.status === 'done' || data.status === 'failed') {
+          clearInterval(interval)
+        }
+      } catch {
+        // 폴링 오류는 무시하고 계속 시도
+      }
+    }, 5000)
   }
 
   const publishedSet = new Set(posts.filter(p => p.status === 'published').map(p => p.channel))
@@ -215,7 +254,57 @@ export default function ReviewClient({ order, images, posts, isBlockedCategory }
         )}
       </div>
 
-      {/* 채널별 발행 */}
+      {/* smartstoreblog 자동 발행 */}
+      <div className="bg-white rounded-xl shadow p-6">
+        <h2 className="font-semibold text-gray-800 mb-4">🤖 자동 발행 (smartstoreblog)</h2>
+
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            추가정보 <span className="text-gray-400 font-normal">(선택)</span>
+          </label>
+          <textarea
+            value={extraNotes}
+            onChange={e => setExtraNotes(e.target.value)}
+            placeholder="예: 주차 가능, 예약 필수, 대표 메뉴는 돈카츠..."
+            rows={3}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        {jobStatus && (
+          <div className={`mb-4 rounded-lg p-4 text-sm ${
+            jobStatus.status === 'done' ? 'bg-green-50 border border-green-200' :
+            jobStatus.status === 'failed' ? 'bg-red-50 border border-red-200' :
+            'bg-blue-50 border border-blue-200'
+          }`}>
+            <div className="flex items-center gap-2 font-medium mb-1">
+              {jobStatus.status === 'pending' && <span className="text-blue-700">⏳ 대기 중 — smartstoreblog가 작업을 집어갈 때까지 대기...</span>}
+              {jobStatus.status === 'running' && <span className="text-blue-700">🔄 발행 진행 중...</span>}
+              {jobStatus.status === 'done' && <span className="text-green-700">✅ 발행 완료!</span>}
+              {jobStatus.status === 'failed' && <span className="text-red-700">❌ 발행 실패</span>}
+            </div>
+            {jobStatus.log && (
+              <pre className="text-xs text-gray-600 whitespace-pre-wrap mt-2 max-h-32 overflow-y-auto">{jobStatus.log}</pre>
+            )}
+          </div>
+        )}
+
+        <button
+          onClick={handleStartJob}
+          disabled={submitting || jobStatus?.status === 'pending' || jobStatus?.status === 'running'}
+          className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold rounded-xl transition-colors"
+        >
+          {submitting ? '작업 생성 중...' :
+           jobStatus?.status === 'pending' ? '⏳ smartstoreblog 대기 중...' :
+           jobStatus?.status === 'running' ? '🔄 발행 진행 중...' :
+           '🚀 자동 발행 시작'}
+        </button>
+        <p className="text-xs text-gray-400 text-center mt-2">
+          smartstoreblog가 실행 중인 PC에서 자동으로 네이버 블로그에 발행됩니다
+        </p>
+      </div>
+
+      {/* 채널별 발행 (수동) */}
       <div className="bg-white rounded-xl shadow p-6">
         <h2 className="font-semibold text-gray-800 mb-4">채널별 발행 (수동 트리거)</h2>
         <div className="space-y-2">
