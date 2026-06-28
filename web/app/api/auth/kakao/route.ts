@@ -8,11 +8,17 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL('/login?error=rate_limited', request.url))
   }
 
+  // 실제 접속한 도메인(origin)을 우선 사용해 localhost 폴백을 방지한다.
+  const origin =
+    process.env.NEXT_PUBLIC_APP_URL ??
+    request.headers.get('origin') ??
+    new URL(request.url).origin
+
   const supabase = await createClient()
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'kakao',
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXTAUTH_URL}/api/auth/callback`,
+      redirectTo: `${origin}/api/auth/callback`,
       scopes: 'profile_nickname account_email',
     },
   })
