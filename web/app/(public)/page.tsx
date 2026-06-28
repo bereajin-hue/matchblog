@@ -54,10 +54,10 @@ export default function LandingPage() {
               무료 플레이스 분석 받기 →
             </Link>
             <Link
-              href="/products"
+              href="/apply"
               className="px-8 py-4 border border-white/20 hover:border-white/40 text-white font-semibold text-lg rounded-xl transition-all hover:bg-white/5"
             >
-              서비스 소개 보기
+              바로 신청하기
             </Link>
           </div>
 
