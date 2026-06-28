@@ -19,7 +19,7 @@ export default function LandingPage() {
           {/* 뱃지 */}
           <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-sm font-medium px-4 py-2 rounded-full mb-8">
             <span className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
-            네이버 플레이스 SEO 전문 대행
+            N사 플레이스 검색최적화 전문 대행
           </div>
 
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
@@ -36,7 +36,7 @@ export default function LandingPage() {
           <div className="flex flex-col gap-3 mb-12 max-w-lg mx-auto text-left">
             {[
               '플레이스 검색 1페이지는커녕 3페이지에도 없다.',
-              '매일 글을 써도 방문자 수는 그대로다.',
+              '매일 블로그 글을 써도 방문자 수는 그대로다.',
               '경쟁 업체는 매일 새로운 후기가 쌓이는데, 나는?',
             ].map((text) => (
               <div key={text} className="flex items-start gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3">
@@ -135,7 +135,7 @@ export default function LandingPage() {
             {[
               {
                 icon: '✍️',
-                title: 'SEO 최적화 포스팅',
+                title: '검색 최적화 포스팅',
                 desc: '분석된 키워드를 활용한 전문 블로그 후기 포스팅을 대신 발행합니다. 공정위 광고 표시 문구가 자동 포함됩니다.',
               },
               {
