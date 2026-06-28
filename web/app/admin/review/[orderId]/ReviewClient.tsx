@@ -144,12 +144,26 @@ export default function ReviewClient({ order, images, posts, isBlockedCategory }
       {/* 업로드 사진 */}
       {images.length > 0 && (
         <div className="bg-white rounded-xl shadow p-6">
-          <h2 className="font-semibold text-gray-800 mb-3">제출 사진 ({images.length}장 미리보기)</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold text-gray-800">제출 사진 ({images.length}장 미리보기)</h2>
+            <a
+              href={`/api/admin/download-assets?orderId=${order.id}`}
+              className="text-xs bg-gray-900 hover:bg-gray-700 text-white px-3 py-1.5 rounded-lg transition-colors"
+            >
+              전체 다운로드 (ZIP)
+            </a>
+          </div>
           <div className="grid grid-cols-4 gap-2">
-            {images.map(img => (
+            {images.map((img, i) => (
               img.signedUrl ? (
-                <img key={img.id} src={img.signedUrl} alt="제출 사진"
-                  className="w-full h-24 object-cover rounded-lg border" />
+                <a key={img.id} href={img.signedUrl} download target="_blank" rel="noopener noreferrer"
+                  className="relative group block">
+                  <img src={img.signedUrl} alt={`제출 사진 ${i + 1}`}
+                    className="w-full h-24 object-cover rounded-lg border group-hover:opacity-75 transition-opacity" />
+                  <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 text-white text-xs font-bold bg-black/30 rounded-lg transition-opacity">
+                    ↓ 다운로드
+                  </span>
+                </a>
               ) : (
                 <div key={img.id} className="w-full h-24 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-xs">
                   로드 실패
