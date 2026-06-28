@@ -19,7 +19,7 @@ export default function LandingPage() {
           {/* 뱃지 */}
           <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-sm font-medium px-4 py-2 rounded-full mb-8">
             <span className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
-            N사 플레이스 검색최적화 전문 대행
+            N사 플레이스 검색 최적화 전문 대행
           </div>
 
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
@@ -35,9 +35,9 @@ export default function LandingPage() {
           {/* 문제점 리스트 */}
           <div className="flex flex-col gap-3 mb-12 max-w-lg mx-auto text-left">
             {[
-              '플레이스 검색 1페이지는커녕 3페이지에도 없다.',
+              '플레이스 검색에 노출되지 않는다.',
               '매일 블로그 글을 써도 방문자 수는 그대로다.',
-              '경쟁 업체는 매일 새로운 후기가 쌓이는데, 나는?',
+              '경쟁 업체는 매일 새로운 후기가 쌓이는데...',
             ].map((text) => (
               <div key={text} className="flex items-start gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3">
                 <span className="text-red-400 text-lg mt-0.5">✗</span>
@@ -184,7 +184,7 @@ export default function LandingPage() {
               </div>
               <div className="space-y-4">
                 {[
-                  '플레이스 블로그 후기 5개 미만',
+                  '플레이스 블로그 후기 없음',
                   '검색 결과 하위권 노출',
                   '한 달 신규 문의 10건 미만',
                   '경쟁 업체 대비 콘텐츠 부족',
@@ -248,7 +248,7 @@ export default function LandingPage() {
               <p className="text-slate-400 text-sm mb-6">소규모 매장 추천</p>
               <ul className="space-y-3 text-slate-600 text-sm mb-8">
                 {[
-                  '네이버 블로그 후기 5개',
+                  'N사 블로그 (기자단) 후기 5개',
                   '매장 사진 20장 이상 필요',
                   '공정위 광고 표시 문구 포함',
                   '발행 완료 URL 제공',
@@ -274,8 +274,8 @@ export default function LandingPage() {
               <p className="text-slate-400 text-sm mb-6">마케팅 강화 필요 업체</p>
               <ul className="space-y-3 text-slate-300 text-sm mb-8">
                 {[
-                  '네이버 블로그 후기 7개',
-                  '티스토리 3개',
+                  'N사 블로그 (기자단) 후기 7개',
+                  'T사 블로그 3개',
                   '네이버 클립 영상 1개',
                   'Blogger 1개',
                   '사진 20장+ 및 영상 3개 필요',
