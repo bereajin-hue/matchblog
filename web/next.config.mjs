@@ -35,6 +35,9 @@ const securityHeaders = [
 ]
 
 const nextConfig = {
+  outputFileTracingIncludes: {
+    '/*': ['./app/**/*'],
+  },
   async headers() {
     return [
       {
