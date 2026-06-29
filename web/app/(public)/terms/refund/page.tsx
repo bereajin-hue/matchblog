@@ -112,7 +112,7 @@ export default function RefundPage() {
               </table>
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              *프로: N사 블로그 7 + T사 블로그 3 + 네이버 클립 1 + Blogger 1 = 12개 기준.
+              *프로: N사 블로그 7 + T사 블로그 3 + N사 클립 1 + Blogger 1 = 12개 기준.
               채널별 단가를 별도로 정하는 경우 신청 화면에 명시합니다.
             </p>
             <p className="mt-3 text-sm bg-gray-50 rounded p-3">

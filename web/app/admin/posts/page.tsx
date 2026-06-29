@@ -17,7 +17,7 @@ export default async function AdminPostsPage() {
     naver_blog_5: '네이버 블로그 5', naver_blog_6: '네이버 블로그 6',
     naver_blog_7: '네이버 블로그 7', tistory_1: '티스토리 1',
     tistory_2: '티스토리 2', tistory_3: '티스토리 3',
-    naver_clip: '네이버 클립', blogger: 'Blogger',
+    naver_clip: 'N사 클립', blogger: 'Blogger',
   }
 
   return (
