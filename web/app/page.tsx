@@ -244,6 +244,10 @@ export default function LandingPage() {
             {/* BASIC */}
             <div className="border-2 border-slate-200 rounded-2xl p-8 hover:shadow-xl transition-all hover:border-slate-300">
               <div className="text-blue-600 font-bold text-sm tracking-widest mb-2">BASIC</div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-slate-400 line-through text-lg">199,000원</span>
+                <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">50% 할인</span>
+              </div>
               <div className="text-4xl font-bold text-gray-900 mb-1">99,000원</div>
               <p className="text-slate-400 text-sm mb-6">소규모 매장 추천</p>
               <ul className="space-y-3 text-slate-600 text-sm mb-8">
@@ -270,6 +274,10 @@ export default function LandingPage() {
                 추천
               </div>
               <div className="text-amber-400 font-bold text-sm tracking-widest mb-2">PRO</div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-slate-500 line-through text-lg">399,000원</span>
+                <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">58% 할인</span>
+              </div>
               <div className="text-4xl font-bold text-white mb-1">165,000원</div>
               <p className="text-slate-400 text-sm mb-6">마케팅 강화 필요 업체</p>
               <ul className="space-y-3 text-slate-300 text-sm mb-8">
