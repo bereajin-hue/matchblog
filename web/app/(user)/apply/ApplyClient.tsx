@@ -23,7 +23,7 @@ export default function ApplyClient() {
   const imageRef = useRef<HTMLInputElement>(null)
   const videoRef = useRef<HTMLInputElement>(null)
 
-  const imageOk = images.length >= 20
+  const imageOk = images.length >= 1 // [심사 임시] 원래 20장 — 심사 후 20으로 원복
   const videoOk = product === 'basic' || videos.length >= 1
   const canSubmit = imageOk && videoOk && agreedCompliance && agreedNoGuarantee && !loading
 
@@ -45,7 +45,7 @@ export default function ApplyClient() {
     e.preventDefault()
     setError('')
 
-    if (!imageOk) { setError('사진을 20장 이상 선택해주세요.'); return }
+    if (!imageOk) { setError('사진을 1장 이상 선택해주세요.'); return }
     if (!videoOk) { setError('프로 상품은 영상을 1개 이상 선택해주세요.'); return }
     if (!agreedCompliance || !agreedNoGuarantee) { setError('필수 동의 항목을 모두 체크해주세요.'); return }
 
@@ -158,7 +158,7 @@ export default function ApplyClient() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               매장 사진 <span className="text-red-500">*</span>
-              <span className="text-gray-400 font-normal"> (최소 20장, 장당 최대 10MB)</span>
+              <span className="text-gray-400 font-normal"> (최소 1장, 장당 최대 10MB)</span>
             </label>
             <input ref={imageRef} type="file" multiple accept="image/*" onChange={handleImages}
               className="hidden" />
@@ -167,7 +167,7 @@ export default function ApplyClient() {
               📷 사진 선택하기
             </button>
             <p className={`mt-1 text-sm font-medium ${imageOk ? 'text-green-600' : 'text-red-500'}`}>
-              {images.length}장 선택됨 {!imageOk && `(최소 20장 필요, ${20 - images.length}장 더 필요)`}
+              {images.length}장 선택됨 {!imageOk && `(최소 1장 필요)`}
             </p>
           </div>
 

@@ -56,8 +56,8 @@ export async function POST(request: NextRequest) {
   // 사진 최소 20장 / 프로는 영상 최소 3개 — 서버 재검증
   const imageCount = assets.filter(a => a.type === 'image').length
   const videoCount = assets.filter(a => a.type === 'video').length
-  if (imageCount < 20) {
-    return NextResponse.json({ error: '사진을 20장 이상 업로드해주세요.' }, { status: 400 })
+  if (imageCount < 1) { // [심사 임시] 원래 20장 — 심사 후 20으로 원복
+    return NextResponse.json({ error: '사진을 1장 이상 업로드해주세요.' }, { status: 400 })
   }
   if (product_type === 'pro' && videoCount < 1) {
     return NextResponse.json({ error: '프로 상품은 영상을 1개 이상 업로드해주세요.' }, { status: 400 })
