@@ -1,4 +1,4 @@
-const CHAT_URL = 'http://pf.kakao.com/_KMqPX/chat'
+const CHAT_URL = 'https://pf.kakao.com/_KMqPX/chat'
 
 function KakaoIcon({ className }: { className?: string }) {
   return (
