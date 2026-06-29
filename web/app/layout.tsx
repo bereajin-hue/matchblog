@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import Link from "next/link";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { KakaoConsultButton, KakaoFloatingButton } from "./components/KakaoConsult";
 import "./globals.css";
 
 const geistSans = localFont({
@@ -76,6 +77,7 @@ async function Nav() {
           ) : (
             <Link href="/login" className="text-gray-700 hover:text-blue-600">로그인</Link>
           )}
+          <KakaoConsultButton />
         </div>
       </div>
     </nav>
@@ -96,6 +98,7 @@ export default function RootLayout({
           <Nav />
         </Suspense>
         {children}
+        <KakaoFloatingButton />
       </body>
     </html>
   );

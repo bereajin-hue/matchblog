@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { KakaoConsultButton } from './components/KakaoConsult'
 
 export const dynamic = 'force-dynamic'
 
@@ -358,10 +359,11 @@ export default function LandingPage() {
         <p className="mt-1">사업자 등록번호: 126-56-00745 | 통신판매업신고: 제2024-화성동탄-1329호</p>
         <p className="mt-1">관광사업등록번호: 제20244-00003호 | 이메일: help@agentt.kr</p>
         <p className="mt-1">주소: 경기도 화성시 메타폴리스로 42, 9층 901호 (반송동, 디앤씨빌딩)</p>
-        <div className="flex justify-center gap-6 mt-4">
+        <div className="flex justify-center items-center gap-6 mt-4">
           <Link href="/terms/privacy" className="hover:text-slate-300 transition-colors">개인정보처리방침</Link>
           <Link href="/terms/service" className="hover:text-slate-300 transition-colors">이용약관</Link>
           <Link href="/terms/refund" className="hover:text-slate-300 transition-colors">환불정책</Link>
+          <KakaoConsultButton />
         </div>
         <p className="mt-4 text-xs text-slate-600">
           * 본 서비스는 공정위 규정에 따라 모든 포스팅에 광고 표시 문구가 포함됩니다.<br />
