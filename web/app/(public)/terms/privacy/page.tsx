@@ -124,7 +124,7 @@ export default function PrivacyPage() {
 
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mt-8 mb-3">제11조 (개인정보 처리방침 시행 및 변경)</h2>
-          <p>이 개인정보 처리방침은 2026. 5. 1. 부터 적용됩니다.</p>
+          <p>이 개인정보 처리방침은 2026. 7. 1. 부터 적용됩니다.</p>
         </section>
 
       </div>

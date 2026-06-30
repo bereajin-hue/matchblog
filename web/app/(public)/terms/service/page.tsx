@@ -147,7 +147,7 @@ export default function ServiceTermsPage() {
 
         <section className="border-t pt-6 mt-8">
           <h2 className="text-base font-semibold text-gray-900 mb-2">부칙</h2>
-          <p>이 약관은 2026년 5월 1일부터 시행합니다.</p>
+          <p>이 약관은 2026년 7월 1일부터 시행합니다.</p>
         </section>
 
       </div>

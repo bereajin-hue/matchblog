@@ -212,7 +212,7 @@ export default function RefundPage() {
               변경 시 시행일 및 변경 내용을 서비스 내 공지합니다. 변경 전 결제한
               건에 대해서는 결제 시점의 약관을 적용합니다.
             </p>
-            <p className="mt-3 text-sm text-gray-500">시행일: 2025년 1월 1일</p>
+            <p className="mt-3 text-sm text-gray-500">시행일: 2026년 7월 1일</p>
           </section>
 
         </div>
